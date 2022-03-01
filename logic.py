@@ -1,4 +1,3 @@
-from cmath import pi
 from typing import List, Tuple, Dict
 
 from pieces import Piece, Player, Pawn, Rook, Knight, Bishop, Queen, King
@@ -8,18 +7,26 @@ white_player = Player("w", -1)
 black_player = Player("b", 1)
 
 start_board = {
-    Rook((0, 0), black_player), Knight((1, 0), black_player), Bishop((2, 0), black_player), Queen((3, 0), black_player),
-    King((4, 0), black_player), Bishop((5, 0), black_player), Knight((6, 0), black_player), Rook((7, 0), black_player),
-    
-    Pawn((0, 1), black_player), Pawn((1, 1), black_player), Pawn((2, 1), black_player), Pawn((3, 1), black_player),
-    Pawn((4, 1), black_player), Pawn((5, 1), black_player), Pawn((6, 1), black_player), Pawn((7, 1), black_player), 
-    
-    
-    Pawn((0, 6), white_player), Pawn((1, 6), white_player), Pawn((2, 6), white_player), Pawn((3, 6), white_player),
-    Pawn((4, 6), white_player), Pawn((5, 6), white_player), Pawn((6, 6), white_player), Pawn((7, 6), white_player), 
-    
-    Rook((0, 7), white_player), Knight((1, 7), white_player),   Bishop((2, 7), white_player), Queen((3, 7), white_player),
-    King((4, 7), white_player), Bishop((5, 7), white_player),   Knight((6, 7), white_player), Rook((7, 7), white_player)
+    Rook((0, 0), black_player), Knight((1, 0), black_player), Bishop(
+        (2, 0), black_player), Queen((3, 0), black_player),
+    King((4, 0), black_player), Bishop((5, 0), black_player), Knight(
+        (6, 0), black_player), Rook((7, 0), black_player),
+
+    Pawn((0, 1), black_player), Pawn((1, 1), black_player), Pawn(
+        (2, 1), black_player), Pawn((3, 1), black_player),
+    Pawn((4, 1), black_player), Pawn((5, 1), black_player), Pawn(
+        (6, 1), black_player), Pawn((7, 1), black_player),
+
+
+    Pawn((0, 6), white_player), Pawn((1, 6), white_player), Pawn(
+        (2, 6), white_player), Pawn((3, 6), white_player),
+    Pawn((4, 6), white_player), Pawn((5, 6), white_player), Pawn(
+        (6, 6), white_player), Pawn((7, 6), white_player),
+
+    Rook((0, 7), white_player), Knight((1, 7), white_player),   Bishop(
+        (2, 7), white_player), Queen((3, 7), white_player),
+    King((4, 7), white_player), Bishop((5, 7), white_player),   Knight(
+        (6, 7), white_player), Rook((7, 7), white_player)
 }
 
 
@@ -30,9 +37,10 @@ def pawn_upgrade(piece, pos):
             piece = Queen(pos, piece.owner)
     return piece
 
-class Board: 
 
-    letters_table={
+class Board:
+
+    letters_table = {
         "a": 0,
         "b": 1,
         "c": 2,
@@ -48,13 +56,13 @@ class Board:
         for piece in starter_board:
             self.pieces[piece.pos] = piece
         self.gui: GUI = GUI()
-        
+
     def draw_board(self):
         self.gui.draw_grid()
 
     def draw_pieces(self):
         for piece in self.pieces.values():
-            
+
             self.gui.draw_piece(piece.pos, piece.img_path)
         self.gui.update()
 
@@ -73,12 +81,14 @@ class Board:
         return Status.PIECE_PRESENT, piece
 
     def highlight(self, piece: Piece):
-        self.gui.draw_piece(piece.pos, piece.img_path, background=Status.HIGHLIGHT)
+        self.gui.draw_piece(piece.pos, piece.img_path,
+                            background=Status.HIGHLIGHT)
 
 
 class Simulation:
-    castle_rook = {}
+    castle_rook = dict()
     _checkmate = True
+    en_passant = dict()
 
     def __init__(self, tester_board, cur_player):
         self.start_board = dict(tester_board)
@@ -96,17 +106,15 @@ class Simulation:
                 available_moves = self.check_directions(my_piece)
                 for new_pos, status in available_moves.items():
                     self.move(my_piece, new_pos)
-                    
-                    
-                    
+
                     if self.check() is False:
                         correct_moves[new_pos] = status
                         self._checkmate = False
                     my_piece.pos = old_pos
-                    
+
                     self.tester_board = dict(self.start_board)
                 all_moves[my_piece] = correct_moves
-        #print(all_moves)
+        # print(all_moves)
         #print("a", all_moves)
         self.moves = all_moves
         return all_moves
@@ -125,13 +133,13 @@ class Simulation:
         cur_piece.pos = new_pos
         self.tester_board[cur_piece.pos] = cur_piece
 
-    def locate_king(self, return_object = False):
+    def locate_king(self, return_object=False):
         """ Gets pos of current's player king """
         for my_piece in self.tester_board.values():
             if my_piece.owner == self.cur_player and my_piece.is_checkable:
                 return my_piece.pos
 
-    def check(self, board_name = "tester_board"):
+    def check(self, board_name="tester_board"):
         king_pos = self.locate_king()
         for pos, enemy in getattr(self, board_name).items():
             if enemy.owner != self.cur_player:
@@ -141,7 +149,20 @@ class Simulation:
                         return True
         return False
 
+    def can_en_passant(self, piece: Piece, new_pos):
+        if not new_pos in self.tester_board:
+            return 
+        x, y = new_pos
+        moving_pos = (x, y + piece.owner.direction)
+        if moving_pos in self.tester_board:
+            return
 
+        other_piece: Piece = self.tester_board[new_pos]
+        if not other_piece.en_passant is True:
+            return
+        self.en_passant[new_pos] = moving_pos
+        #print("works", piece, new_pos)
+        return True
 
     def special_directions(self, piece, pos, special_status):
         if pos in self.tester_board:                # checks if mentioned position is occupied by any piece
@@ -149,29 +170,31 @@ class Simulation:
         else:
             status = Status.EMPTY
 
-        if special_status == Status.ENEMY:  
+        if special_status == Status.ENEMY:
             if status == Status.EMPTY:              # attack only enemies
                 return True
-                        
+
         elif special_status == Status.EMPTY:        # e.g.: attack only
-            if status != Status.EMPTY:  
+            if status != Status.EMPTY:
                 return True
 
         elif special_status == Status.CASTLE:       # it can't castle
             castle_status = self.can_castle(piece, pos)
             if not castle_status:
                 return True
-            
+
+        elif special_status == Status.EN_PASSANT:
+            return not self.can_en_passant(piece, pos)
 
         return False                                # all is good
 
     def can_castle(self, piece: Piece, pos):
         if not isinstance(piece, King):
-            return 
+            return
         if piece.owner != self.cur_player:
             return
         if piece.has_moved or piece.has_been_checked:
-            return 
+            return
 
         king_x, king_y = piece.pos
         rook_x = 0 if king_x > pos[0] else 7
@@ -183,14 +206,12 @@ class Simulation:
         if rook.has_moved:
             return
 
-
         direction = -1 if king_x > pos[0] else 1
         for x in range(king_x + direction, rook_x, direction):
             if (x, king_y) in self.tester_board:
                 return False
         self.castle_rook[pos] = (rook, (king_x + direction, king_y))
         return True
-
 
     def check_directions(self, cur_piece: Piece, enemy_only: bool = False):
         all_directions = cur_piece.possible_directions()
@@ -201,21 +222,23 @@ class Simulation:
                     occupaying_piece = self.tester_board[pos]
                 except KeyError:                                # no piece there: Status.EMPTY
                     if not(enemy_only):
-                        moves[pos] = Status.EMPTY
-                        if direction[0] == Status.CASTLE:
-                            moves[pos] = Status.CASTLE
+                        if direction[0] is Status.EMPTY:
+                            moves[pos] = Status.EMPTY
+                        else:
+                            moves[pos] = direction[0]
                 else:                                           # piece is there and its not the same owner: Status.ENEMY
                     if occupaying_piece.owner != cur_piece.owner:
-                        moves[pos] = Status.ENEMY
+                        if direction[0] is Status.ENEMY:
+                            moves[pos] = Status.ENEMY
+                        else:
+                            moves[pos] = direction[0]
                     break
-            
+
             if direction[0] != Status.NORMAL and moves != {}:
                 if self.special_directions(cur_piece, pos, direction[0]) and pos in moves:
-                        del moves[pos]
+                    del moves[pos]
 
-                    
         return moves
-                        
 
 
 class Game:
@@ -223,8 +246,7 @@ class Game:
     last_piece_moved = None
     is_checked = set()
 
-
-    def __init__(self, owners: List[Player],board: Board = Board() ):
+    def __init__(self, owners: List[Player], board: Board = Board()):
         self.board = board
         self.owners = list(owners)
         self.change_player()
@@ -281,36 +303,44 @@ class Game:
                         continue
         return after_check"""
 
-    def calculate(self, piece: Piece): 
+    def calculate(self, piece: Piece):
         self.board.draw_board()
         self.board.draw_moves(self.only_moves[piece])
         self.board.highlight(piece)
-        self.board.draw_pieces() 
-
+        self.board.draw_pieces()
 
     def move(self, piece: Piece, new_pos: Tuple[int, int]) -> None:
-        self.board.draw_board()     #draws
-        
+        self.board.draw_board()  # draws
+
         moves = self.only_moves[piece]
         if new_pos in moves.keys():
             status = moves[new_pos]
-            #print(status)
+            print(status)
         else:                                                                   # if the pos is not correct
             incorrect_piece_status, clicked_piece = self.board[new_pos]
             if incorrect_piece_status == Status.PIECE_PRESENT and piece.owner == clicked_piece.owner:
                 return Status.RECHOOSE
             return Status.INCORRECT_SPOT
 
-        del self.board.pieces[piece.pos]                            # chose correct square
-        piece = pawn_upgrade(piece, new_pos)                        # upgrade to Queen if neccesary
+        # chose correct square
+        del self.board.pieces[piece.pos]
+        # upgrade to Queen if neccesary
+        piece = pawn_upgrade(piece, new_pos)
         if status is Status.CASTLE:
             self.move(*self.castle_rook[new_pos])
+        
+        if status is Status.EN_PASSANT:
+            print("en_passant", self.en_passant[new_pos])
+            moving_pos = self.en_passant[new_pos]
+            piece.pos = moving_pos
+            self.board.pieces[moving_pos] = piece
+            del self.board.pieces[new_pos]
 
-        piece.pos = new_pos
-        self.board.pieces[new_pos] = piece
+        else:
+            piece.pos = new_pos
+            self.board.pieces[new_pos] = piece
 
         piece.has_moved = True
-
 
         self.board.draw_pieces()
         return Status.MOVED             # everything is ok
@@ -389,14 +419,16 @@ class Game:
                     checkmate = False
         return checkmate
 """
+
     def simulate(self):
         """Simulates every game move to determine if it causes check"""
         sim = Simulation(dict(self.board.pieces), self.cur_player)
         if sim.currently_checked():
             self.board.pieces[sim.locate_king()].has_been_checked = True
-        self.only_moves =  sim.run()
+        self.only_moves = sim.run()
         self.castle_rook: dict = sim.castle_rook
         self.checkmate = sim.checkmate()
+        self.en_passant = sim.en_passant
 
     def main(self):
         self.board.draw_board()
@@ -410,7 +442,7 @@ class Game:
             if need_new_pos:                                # chooses new piece
                 running, pos = self.board.gui.get_click()
                 print("1", pos)
-            
+
             status, chosen_piece = self.board[pos]
             if status == Status.PIECE_PRESENT and chosen_piece.owner != self.cur_player:  # checks if it's the correct player
                 print(2, "wrong player")
@@ -421,20 +453,21 @@ class Game:
                 self.calculate(chosen_piece)
                 print("Check:", self.checkmate)
                 while True:
-                    running, pos = self.board.gui.get_click()   # Where do you want the piece to move
+                    # Where do you want the piece to move
+                    running, pos = self.board.gui.get_click()
                     is_moved = self.move(chosen_piece, pos)
                     if is_moved == Status.MOVED:
                         need_new_pos = True
                         self.change_player()
                         self.simulate()
                         if self.checkmate:
-                            running = Status.QUIT  
+                            running = Status.QUIT
                         break
                     elif is_moved == Status.RECHOOSE:
                         need_new_pos = False
                         break
 
-                    
+
 if __name__ == "__main__":
     g = Game([white_player, black_player])
 
