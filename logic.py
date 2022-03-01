@@ -222,15 +222,13 @@ class Simulation:
                     occupaying_piece = self.tester_board[pos]
                 except KeyError:                                # no piece there: Status.EMPTY
                     if not(enemy_only):
-                        if direction[0] is Status.EMPTY:
-                            moves[pos] = Status.EMPTY
-                        else:
+                        moves[pos] = Status.EMPTY
+                        if direction[0] in (Status.EN_PASSANT, Status.CASTLE):
                             moves[pos] = direction[0]
                 else:                                           # piece is there and its not the same owner: Status.ENEMY
                     if occupaying_piece.owner != cur_piece.owner:
-                        if direction[0] is Status.ENEMY:
-                            moves[pos] = Status.ENEMY
-                        else:
+                        moves[pos] = Status.ENEMY
+                        if direction[0] in (Status.EN_PASSANT, Status.CASTLE):
                             moves[pos] = direction[0]
                     break
 
