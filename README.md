@@ -8,4 +8,4 @@ pip install pygame
 
 python3 -m pip install pygame
 
-## Ima vse funkcije navadnega šaha, manka le en passant
+## Ima vse funkcije navadnega šaha tudi En Passant
