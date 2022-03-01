@@ -22,6 +22,7 @@ class Piece(ABC):
     has_been_checked: bool = None
     has_moved: bool = False
     can_castle: bool = False
+    en_passant: bool = None
 
     pos: List[int]
 
@@ -41,8 +42,15 @@ class Piece(ABC):
         return f"<{self.__class__.__name__} {self.pos}>"
 
 
+class DummyPawn():
+    def __init__(self, pos, parent_pos):
+        self.pos = pos
+        self.parent_pos = parent_pos
+
+
 class Pawn(Piece):
     piece_name = "p"
+    en_passant = False
 
     def possible_directions(self) -> List[Union[Status, List[int]]]:
         dir = []
@@ -53,13 +61,19 @@ class Pawn(Piece):
             dir.append([Status.EMPTY, (x, y + add_y), (x, y + add_y * 2)])
         else:
             dir.append([Status.EMPTY, (x, y + add_y)])
- 
+
+        if y == self.start_pos[1] + 2 * add_y:
+            self.en_passant = True
+        else:
+            self.en_passant = False
+
         for add_x in (-1, 1):   # only targets enemy spaces
             add_y = self.owner.direction
 
             new_x, new_y = x + add_x, y + add_y
             if 0 <= new_x <= 7 and 0 <= new_y <= 7:
                 dir.append([Status.ENEMY, (new_x, new_y)])
+                dir.append([Status.EN_PASSANT, (new_x, y)])
 
         return dir
 
@@ -146,7 +160,7 @@ class King(Piece):
 
             new_x, new_y = x + add_x, y + add_y
             if 0 <= new_x <= 7 and 0 <= new_y <= 7:
-                status = Status.NORMAL if abs(add_x) < 2 else Status.CASTLE 
+                status = Status.NORMAL if abs(add_x) < 2 else Status.CASTLE
                 dir.append([status, (new_x, new_y)])
             #print(dir, self.pos)
 
