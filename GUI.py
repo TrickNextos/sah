@@ -24,6 +24,7 @@ class Status(Enum):
 
     # moving directions
     NORMAL = "normal"
+    CASTLE = "castle"
     #ENEMY = "enemy"
     #EMPTY = "empty"
 
@@ -53,9 +54,9 @@ class GUI:
     )
 
     def __init__(self):
-        self.screen = pygame.display.set_mode((self.WIN_WIDTH, self.WIN_HEIGHT))
-
         pygame.init()
+
+        self.screen = pygame.display.set_mode((self.WIN_WIDTH, self.WIN_HEIGHT))
 
     def draw_square(self, x, y, color_attr: Status =Status.EMPTY) -> None:
         square = pygame.Rect(
@@ -107,14 +108,14 @@ class GUI:
     def draw_can_move(self, possible_moves: Dict):
         """ Draws circles on squares that are in the list"""
         for (x, y), status in possible_moves.items():
-            if status == Status.EMPTY:
-                pygame.draw.circle(
+            if status == Status.ENEMY:
+               self.draw_square(x, y, Status.HIGHLIGHT)
+            else:
+                 pygame.draw.circle(
                     self.screen, self.get_color(x, y).can_move,
                     (x*self.SQUARE_SIZE + self.SQUARE_SIZE * .5 , y*self.SQUARE_SIZE + self.SQUARE_SIZE * .5),
                     self.SQUARE_SIZE * .2
                     )
-            elif status == Status.ENEMY:
-                self.draw_square(x, y, Status.HIGHLIGHT)
 
     def get_click(self):
         action = False

@@ -1,3 +1,4 @@
+from cmath import pi
 from typing import List, Tuple, Dict
 
 from pieces import Piece, Player, Pawn, Rook, Knight, Bishop, Queen, King
@@ -76,6 +77,8 @@ class Board:
 
 
 class Simulation:
+    castle_rook = {}
+    _checkmate = True
 
     def __init__(self, tester_board, cur_player):
         self.start_board = dict(tester_board)
@@ -85,7 +88,7 @@ class Simulation:
     def run(self):
         """Main func that returns a dict of all possible moves"""
         all_moves = {}
-        print("Check:", self.check())
+        #print("Check:", self.check())
         for old_pos, my_piece in self.start_board.items():
             if my_piece.owner == self.cur_player:
 
@@ -98,13 +101,22 @@ class Simulation:
                     
                     if self.check() is False:
                         correct_moves[new_pos] = status
+                        self._checkmate = False
                     my_piece.pos = old_pos
                     
                     self.tester_board = dict(self.start_board)
                 all_moves[my_piece] = correct_moves
         #print(all_moves)
         #print("a", all_moves)
+        self.moves = all_moves
         return all_moves
+
+    def currently_checked(self):
+        return self.check(board_name="start_board")
+
+    def checkmate(self) -> bool:
+        print(self._checkmate)
+        return self._checkmate
 
     def move(self, cur_piece: Piece, new_pos):
         """ Moves a piece but is used only for test (it's reverted back)"""
@@ -113,15 +125,15 @@ class Simulation:
         cur_piece.pos = new_pos
         self.tester_board[cur_piece.pos] = cur_piece
 
-    def locate_king(self):
+    def locate_king(self, return_object = False):
         """ Gets pos of current's player king """
         for my_piece in self.tester_board.values():
             if my_piece.owner == self.cur_player and my_piece.is_checkable:
                 return my_piece.pos
 
-    def check(self):
+    def check(self, board_name = "tester_board"):
         king_pos = self.locate_king()
-        for pos, enemy in self.tester_board.items():
+        for pos, enemy in getattr(self, board_name).items():
             if enemy.owner != self.cur_player:
                 moves = self.check_directions(enemy, enemy_only=True)
                 for pos in moves.items():
@@ -131,7 +143,7 @@ class Simulation:
 
 
 
-    def special_directions(self, pos, special_status):
+    def special_directions(self, piece, pos, special_status):
         if pos in self.tester_board:                # checks if mentioned position is occupied by any piece
             status = Status.ENEMY
         else:
@@ -145,7 +157,40 @@ class Simulation:
             if status != Status.EMPTY:  
                 return True
 
+        elif special_status == Status.CASTLE:       # it can't castle
+            castle_status = self.can_castle(piece, pos)
+            if not castle_status:
+                return True
+            
+
         return False                                # all is good
+
+    def can_castle(self, piece: Piece, pos):
+        if not isinstance(piece, King):
+            return 
+        if piece.owner != self.cur_player:
+            return
+        if piece.has_moved or piece.has_been_checked:
+            return 
+
+        king_x, king_y = piece.pos
+        rook_x = 0 if king_x > pos[0] else 7
+        if (rook_x, king_y) not in self.tester_board:
+            return
+        rook = self.tester_board[rook_x, king_y]
+        if not isinstance(rook, Rook):
+            return
+        if rook.has_moved:
+            return
+
+
+        direction = -1 if king_x > pos[0] else 1
+        for x in range(king_x + direction, rook_x, direction):
+            if (x, king_y) in self.tester_board:
+                return False
+        self.castle_rook[pos] = (rook, (king_x + direction, king_y))
+        return True
+
 
     def check_directions(self, cur_piece: Piece, enemy_only: bool = False):
         all_directions = cur_piece.possible_directions()
@@ -157,14 +202,17 @@ class Simulation:
                 except KeyError:                                # no piece there: Status.EMPTY
                     if not(enemy_only):
                         moves[pos] = Status.EMPTY
+                        if direction[0] == Status.CASTLE:
+                            moves[pos] = Status.CASTLE
                 else:                                           # piece is there and its not the same owner: Status.ENEMY
                     if occupaying_piece.owner != cur_piece.owner:
                         moves[pos] = Status.ENEMY
                     break
             
             if direction[0] != Status.NORMAL and moves != {}:
-                if self.special_directions(pos, direction[0]) and pos in moves:
+                if self.special_directions(cur_piece, pos, direction[0]) and pos in moves:
                         del moves[pos]
+
                     
         return moves
                         
@@ -178,7 +226,6 @@ class Game:
 
     def __init__(self, owners: List[Player],board: Board = Board() ):
         self.board = board
-        print(owners)
         self.owners = list(owners)
         self.change_player()
 
@@ -247,6 +294,7 @@ class Game:
         moves = self.only_moves[piece]
         if new_pos in moves.keys():
             status = moves[new_pos]
+            #print(status)
         else:                                                                   # if the pos is not correct
             incorrect_piece_status, clicked_piece = self.board[new_pos]
             if incorrect_piece_status == Status.PIECE_PRESENT and piece.owner == clicked_piece.owner:
@@ -255,8 +303,13 @@ class Game:
 
         del self.board.pieces[piece.pos]                            # chose correct square
         piece = pawn_upgrade(piece, new_pos)                        # upgrade to Queen if neccesary
+        if status is Status.CASTLE:
+            self.move(*self.castle_rook[new_pos])
+
         piece.pos = new_pos
         self.board.pieces[new_pos] = piece
+
+        piece.has_moved = True
 
 
         self.board.draw_pieces()
@@ -339,7 +392,11 @@ class Game:
     def simulate(self):
         """Simulates every game move to determine if it causes check"""
         sim = Simulation(dict(self.board.pieces), self.cur_player)
+        if sim.currently_checked():
+            self.board.pieces[sim.locate_king()].has_been_checked = True
         self.only_moves =  sim.run()
+        self.castle_rook: dict = sim.castle_rook
+        self.checkmate = sim.checkmate()
 
     def main(self):
         self.board.draw_board()
@@ -361,7 +418,8 @@ class Game:
 
             if status == Status.PIECE_PRESENT:   # Checks if there is a piece
                 print(3, "piece present")
-                self.calculate(chosen_piece)  
+                self.calculate(chosen_piece)
+                print("Check:", self.checkmate)
                 while True:
                     running, pos = self.board.gui.get_click()   # Where do you want the piece to move
                     is_moved = self.move(chosen_piece, pos)
@@ -369,6 +427,8 @@ class Game:
                         need_new_pos = True
                         self.change_player()
                         self.simulate()
+                        if self.checkmate:
+                            running = Status.QUIT  
                         break
                     elif is_moved == Status.RECHOOSE:
                         need_new_pos = False

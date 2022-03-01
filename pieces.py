@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 
+from numpy import can_cast
+
 from GUI import Status
 
 
@@ -17,6 +19,9 @@ class Piece(ABC):
     img_path: str = "./img/{}{}.png"
     piece_name: str
     is_checkable: bool = False
+    has_been_checked: bool = None
+    has_moved: bool = False
+    can_castle: bool = False
 
     pos: List[int]
 
@@ -61,6 +66,7 @@ class Pawn(Piece):
 
 class Rook(Piece):
     piece_name = "r"
+    can_castle = True
 
     def possible_directions(self) -> List[List[int]]:
         dir = []
@@ -136,11 +142,13 @@ class King(Piece):
         dir = []
         x, y = self.pos
 
-        for add_x, add_y in ((1, 1), (1, 0), (1, -1), (0, 1), (0, -1), (-1, 1), (-1, 0), (-1, -1)):
+        for add_x, add_y in ((1, 1), (1, 0), (1, -1), (0, 1), (0, -1), (-1, 1), (-1, 0), (-1, -1), (2, 0), (-2, 0)):
 
             new_x, new_y = x + add_x, y + add_y
             if 0 <= new_x <= 7 and 0 <= new_y <= 7:
-                dir.append([Status.NORMAL, (new_x, new_y)])
+                status = Status.NORMAL if abs(add_x) < 2 else Status.CASTLE 
+                dir.append([status, (new_x, new_y)])
+            #print(dir, self.pos)
 
         return dir
 
