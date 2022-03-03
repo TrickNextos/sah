@@ -4,6 +4,7 @@ from typing import List, Tuple, Dict
 
 
 class Status(Enum):
+    """ used for attributes and is returned and checked by a lot of other func instead of stings"""
     # used fo colors
     EMPTY = "empty"
     ENEMY = "enemy"
@@ -64,6 +65,7 @@ class GUI:
             (self.WIN_WIDTH, self.WIN_HEIGHT))
 
     def draw_square(self, x, y, color_attr: Status = Status.EMPTY) -> None:
+        """ draws a square (highligthed or not)"""
         square = pygame.Rect(
             x * self.SQUARE_SIZE, y * self.SQUARE_SIZE,
             self.SQUARE_SIZE, self.SQUARE_SIZE
@@ -78,6 +80,7 @@ class GUI:
                 self.draw_square(x, y)
 
     def draw_piece(self, pos: Tuple[int, int], piece_path: str, background=Status.EMPTY):
+        """ draws a piece with the specified background """
         x, y = pos
         nonsized_img = pygame.image.load(piece_path)
         img = pygame.transform.scale(

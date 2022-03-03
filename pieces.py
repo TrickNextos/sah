@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 
-from numpy import can_cast
-
 from GUI import Status
 
 
@@ -16,7 +14,9 @@ class Player:
 
 
 class Piece(ABC):
-    img_path: str = "./img/{}{}.png"
+    """ ABC class with a lot of propeties set to False so they can be used on specific subclasses"""
+    img_directory: str = "./img/"
+    img_path: str = img_directory + "{}{}.png"
     piece_name: str
     is_checkable: bool = False
     has_been_checked: bool = None
@@ -40,13 +40,7 @@ class Piece(ABC):
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {self.pos}>"
-
-
-class DummyPawn():
-    def __init__(self, pos, parent_pos):
-        self.pos = pos
-        self.parent_pos = parent_pos
-
+    
 
 class Pawn(Piece):
     piece_name = "p"
@@ -167,6 +161,7 @@ class King(Piece):
         return dir
 
 
+# just for test, doesnt work anymore
 if __name__ == "__main__":
     from GUI import GUI
     """Test for piece movements"""
