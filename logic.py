@@ -33,7 +33,6 @@ start_board = {
 
 
 def pawn_upgrade(piece, pos):
-    """ returns the piece, except if it is a pawn at the last rank it returns a Queen """
     if isinstance(piece, Pawn):
         direction = piece.owner.direction
         if pos[1] == 7 and direction == 1 or pos[1] == 0 and direction == -1:
@@ -61,11 +60,9 @@ class Board:
         self.gui: GUI = GUI()
 
     def draw_board(self):
-        """ draws the grid """
         self.gui.draw_grid()
 
     def draw_pieces(self):
-        """ draws piece one by one """
         for piece in self.pieces.values():
 
             self.gui.draw_piece(piece.pos, piece.img_path)
@@ -76,10 +73,6 @@ class Board:
         self.gui.draw_can_move(moves)
 
     def __getitem__(self, pos) -> Piece:
-        """ 
-        idk is this is still used
-        gets a pos and returns (Status (depending if the piece is present or not) and the piece)
-        """
         pos = tuple(pos)
         x, y = pos
         if isinstance(x, str):
@@ -91,7 +84,6 @@ class Board:
         return Status.PIECE_PRESENT, piece
 
     def highlight(self, piece: Piece):
-        """ higlights the piece """
         self.gui.draw_piece(piece.pos, piece.img_path,
                             background=Status.HIGHLIGHT)
 
@@ -159,7 +151,6 @@ class Simulation:
                 return my_piece.pos
 
     def check(self, board_name="tester_board"):
-        """ checks if the king is in check """
         king_pos = self.locate_king()
         for pos, enemy in getattr(self, board_name).items():
             if enemy.owner != self.cur_player:
@@ -277,7 +268,6 @@ class Game:
         self.change_player()
 
     def change_player(self):
-        """ it's the other's player turn"""
         self.cur_player = self.owners[self._i % 2]
         self.opponent_player = self.owners[(self._i + 1) % 2]
         self._i += 1
@@ -337,7 +327,7 @@ class Game:
         self.en_passant = sim.en_passant
 
     def main(self):
-        """ main finc that runs the program"""
+        """ main func that runs the program"""
         self.board.draw_board()
         self.board.draw_pieces()
         running = True
